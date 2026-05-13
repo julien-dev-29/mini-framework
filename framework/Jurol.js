@@ -32,12 +32,7 @@ function createDom(fiber) {
       ? document.createTextNode("")
       : document.createElement(fiber.type);
 
-  Object.keys(fiber.props)
-    .filter((key) => key !== "children" && key !== "nodeValue")
-    .forEach((key) => {
-      dom[key] = fiber.props[key];
-    });
-
+  updateDom(dom, {}, fiber.props);
   return dom;
 }
 
@@ -61,7 +56,7 @@ function updateDom(dom, prevProps, nextProps) {
     .filter(isProperty)
     .filter(isGone(prevProps, nextProps))
     .forEach((name) => {
-      dom[name] = "";
+      dom[name] = null;
     });
 
   // Set new or changed properties
@@ -89,6 +84,7 @@ function commitRoot() {
   deletions.forEach(commitWork);
   commitWork(wipRoot.child);
   currentRoot = wipRoot;
+  console.log(currentRoot);
   wipRoot = null;
 }
 
@@ -121,12 +117,12 @@ function commitDeletion(fiber, domParent) {
   if (fiber.dom) {
     domParent.removeChild(fiber.dom);
   } else {
-    if (fiber.child) commitDeletion(fiber.child, domParent);
-    if (fiber.sibling) commitDeletion(fiber.sibling, domParent);
+    commitDeletion(fiber.child, domParent);
   }
 }
 
 function render(element, container) {
+  // La racine en cours
   wipRoot = {
     dom: container,
     props: {
@@ -142,17 +138,21 @@ let nextUnitOfWork = null;
 let wipRoot = null;
 let currentRoot = null;
 let deletions = null;
+let isRendering = false;
 
 function workLoop(deadline) {
-  let shouldYield = false;
+  isRendering = true;
+  let shouldYield = false; // ???
   while (nextUnitOfWork && !shouldYield) {
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
     shouldYield = deadline.timeRemaining() < 1;
   }
   if (!nextUnitOfWork && wipRoot) commitRoot();
+  isRendering = false;
   requestIdleCallback(workLoop);
 }
 
+// J'entre dand le rendu
 requestIdleCallback(workLoop);
 
 function performUnitOfWork(fiber) {
@@ -193,20 +193,25 @@ function useState(initial) {
     state: oldHook ? oldHook.state : initial,
     queue: [],
   };
-  const actions = oldHook ? oldHook.queue : [];
+  const actions = oldHook ? [...oldHook.queue] : [];
   actions.forEach((action) => {
     hook.state = typeof action === "function" ? action(hook.state) : action;
   });
-  hook.queue = [];
+  if (oldHook) {
+    oldHook.queue = [];
+  }
   const setState = (action) => {
     hook.queue.push(action);
-    wipRoot = {
-      dom: currentRoot.dom,
-      props: currentRoot.props,
-      alternate: currentRoot,
-    };
-    nextUnitOfWork = wipRoot;
-    deletions = [];
+    if (!wipRoot && !isRendering) {
+      wipRoot = {
+        dom: currentRoot.dom,
+        props: currentRoot.props,
+        alternate: currentRoot,
+      };
+
+      nextUnitOfWork = wipRoot;
+      deletions = [];
+    }
   };
   wipFiber.hooks.push(hook);
   hookIndex++;
