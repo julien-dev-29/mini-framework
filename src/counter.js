@@ -1,7 +1,9 @@
-/**
- * @jsx Jurol.createElement
- */
-function Counter() {
-  const [state, setState] = Jurol.useState(1);
-  return <h1 onClick={() => setState((c) => c + 1)}>Count: {}</h1>;
+export function setupCounter(element) {
+  let counter = 0
+  const setCounter = (count) => {
+    counter = count
+    element.innerHTML = `Count is ${counter}`
+  }
+  element.addEventListener('click', () => setCounter(counter + 1))
+  setCounter(0)
 }
