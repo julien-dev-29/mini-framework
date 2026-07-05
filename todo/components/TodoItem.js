@@ -13,7 +13,7 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }) {
 
   function finishEdit(e, id) {
     const val = e.target.value.trim()
-    if (val) {
+    if (val && val !== todo.title) {
       onEdit(id, val)
     }
     if (e.target.closest('li')) {
@@ -25,6 +25,7 @@ export function TodoItem({ todo, onToggle, onDelete, onEdit }) {
     if (e.key === 'Enter') {
       finishEdit(e, todo.id)
     } else if (e.key === 'Escape') {
+      e.target.value = todo.title
       if (e.target.closest('li')) {
         e.target.closest('li').classList.remove('editing')
       }

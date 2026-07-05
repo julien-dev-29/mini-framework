@@ -109,6 +109,11 @@ export function patch(parent, oldNode, newNode, index = 0) {
 
   const oldChildren = oldNode.children || []
   const newChildren = newNode.children || []
+
+  while (el.childNodes.length > newChildren.length) {
+    el.removeChild(el.lastChild)
+  }
+
   const len = Math.max(oldChildren.length, newChildren.length)
 
   for (let i = 0; i < len; i++) {

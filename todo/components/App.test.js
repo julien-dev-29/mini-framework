@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { h } from '../../framework/index.js'
-import { createElement } from '../../framework/vdom.js'
+import { createElement, patch } from '../../framework/vdom.js'
 import { Header } from './Header.js'
 import { TodoItem } from './TodoItem.js'
 import { TodoList } from './TodoList.js'
@@ -206,5 +206,42 @@ describe('App', () => {
     const el = render(h(App, { todos, filter: 'completed', store: createMockStore({ todos, filter: 'completed' }) }))
     expect(el.querySelectorAll('.todo-list li').length).toBe(1)
     expect(el.querySelector('.todo-list li').textContent).toContain('B')
+  })
+
+  it('patch cycle 0→1→2 todos keeps label empty', () => {
+    const store = { setState: vi.fn(), subscribe: vi.fn(), getState: () => ({}) }
+    const outlet = document.createElement('div')
+    let currentVNode = null
+
+    function render(todos) {
+      const newVNode = h(App, { todos, filter: 'all', store })
+      patch(outlet, currentVNode, newVNode)
+      currentVNode = newVNode
+    }
+
+    render([])
+    let main = outlet.querySelector('.main')
+    expect(main.children.length).toBe(0)
+
+    render([{ id: 1, title: 'ylo', completed: false }])
+    main = outlet.querySelector('.main')
+    expect(main.children.length).toBe(3)
+    expect(main.children[0].tagName).toBe('INPUT')
+    expect(main.children[1].tagName).toBe('LABEL')
+    expect(main.children[2].tagName).toBe('UL')
+    expect(main.querySelector('label').children.length).toBe(0)
+    expect(main.querySelector('ul').children.length).toBe(1)
+
+    render([
+      { id: 1, title: 'ylo', completed: false },
+      { id: 2, title: 'ylo2', completed: false }
+    ])
+    main = outlet.querySelector('.main')
+    expect(main.children.length).toBe(3)
+    expect(main.children[0].tagName).toBe('INPUT')
+    expect(main.children[1].tagName).toBe('LABEL')
+    expect(main.children[2].tagName).toBe('UL')
+    expect(main.querySelector('label').children.length).toBe(0)
+    expect(main.querySelector('ul').children.length).toBe(2)
   })
 })

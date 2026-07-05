@@ -14,7 +14,7 @@ export function TodoList({ todos, onToggle, onDelete, onEdit, onToggleAll }) {
       checked: allCompleted,
       onChange: onToggleAll
     }),
-    h('label', { htmlFor: 'toggle-all' }, 'Mark all as complete'),
+    h('label', { htmlFor: 'toggle-all' }),
     h('ul', { class: 'todo-list' },
       ...todos.map(todo =>
         h(TodoItem, { todo, onToggle, onDelete, onEdit })
